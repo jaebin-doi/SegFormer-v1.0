@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>추론 결과 이력 - DOI AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/mis-style.css">
+  <style>
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbar for Table */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Table Enhancements */
+    .th-glass {
+      background: rgba(11, 14, 18, 0.95);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Mobile: shrink table text/badges to fit narrow viewports */
+    @media (max-width: 767px) {
+      table .text-sm { font-size: 11px; line-height: 1.3; }
+      table .text-xs { font-size: 10px; line-height: 1.2; }
+      table .text-\[11px\] { font-size: 9px; }
+      table .font-mono { letter-spacing: -0.02em; }
+    }
+
+    .spark-bar {
+      background: linear-gradient(90deg, #374151 0%, #374151 100%);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .spark-bar-fill {
+      background: linear-gradient(90deg, #10B981, #34D399);
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    /* Inference Preview Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 12, 0.85);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .modal-backdrop.open {
+      display: flex;
+      opacity: 1;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-card {
+      background: linear-gradient(135deg, #11161D 0%, #0B0E12 100%);
+      border: 1px solid #2A313B;
+      border-radius: 12px;
+      width: min(1100px, 95vw);
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+    .modal-backdrop.open .modal-card {
+      transform: scale(1);
+    }
+
+    /* Mock ortho image background (synthetic aerial view) */
+    .ortho-canvas {
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(34, 197, 94, 0.18) 0%, transparent 40%),
+        radial-gradient(ellipse at 75% 60%, rgba(234, 179, 8, 0.15) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 80%, rgba(21, 128, 61, 0.20) 0%, transparent 30%),
+        linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      position: relative;
+    }
+    .ortho-canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 40px);
+      pointer-events: none;
+    }
+
+    .mask-layer {
+      transition: opacity 0.25s ease;
+    }
+    .mask-layer.hidden-mask {
+      opacity: 0;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+
+<body
+  class="flex h-screen w-screen bg-gradient-to-br from-[#0B0E12] via-[#0F1318] to-[#151A20] text-[#E6E9EF] overflow-hidden select-none">
+
+  <div class="noise-overlay"></div>
+
+  <!-- Sidebar (Consistent with Index) -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0B0E12] border-r border-[#2A313B] flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 lg:static lg:inset-auto lg:flex-shrink-0">
+    <div class="p-12 flex flex-col items-center">
+      <div
+        class="w-16 h-16 rounded-full border border-[#2A313B] flex items-center justify-center mb-4 cursor-pointer hover:border-[#C5A059] transition-colors group relative overflow-hidden">
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Profile"
+          class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">
+      </div>
+      <div class="text-center">
+        <h2 id="sidebar-name" class="text-[16px] font-bold text-[#E6E9EF] tracking-wide">김 관리자</h2>
+        <p id="sidebar-team" class="text-[12px] text-[#A9B0BC] mt-1 font-medium">생산 1팀</p>
+      </div>
+
+      <!-- Mobile Only Icons -->
+      <div class="flex lg:hidden items-center gap-4 mt-6">
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-4 space-y-1">
+      <a href="index.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">홈</span>
+      </a>
+
+      <a href="m1_model_training.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 학습 관리</span>
+      </a>
+
+      <a href="m2_training_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="history" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">학습 이력 조회</span>
+      </a>
+
+      <a href="m3_inference_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 bg-[#1A1F26] text-[#E6E9EF] transition-all duration-200 group border-l-2 border-[#C5A059]">
+        <i data-lucide="scan-search" class="w-5 h-5 text-[#C5A059]"></i>
+        <span class="text-[14px] font-medium tracking-tight">추론 결과 이력</span>
+      </a>
+
+      <a href="m4_finetuning.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="repeat" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">파인튜닝 시스템</span>
+      </a>
+
+      <a href="m5_model_performance.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 성능 분석</span>
+      </a>
+
+    </nav>
+
+    <div class="p-8">
+      <h2 class="text-2xl text-[#D4C09E] font-semibold text-gradient-gold tracking-tighter">DOI AI</h2>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col min-w-0 relative">
+
+    <!-- Top Bar -->
+    <header
+      class="fixed top-0 right-0 left-0 lg:left-[260px] h-[64px] border-b border-[#2A313B] flex items-center justify-between px-4 lg:px-8 bg-[#0B0E12]/80 backdrop-blur-md z-10 transition-all duration-300">
+      <div class="flex items-center gap-4">
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="lg:hidden text-[#A9B0BC] hover:text-[#E6E9EF]">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <h1 class="text-xl font-light tracking-tight text-white"><span class="font-medium text-[#C5A059]">추론 결과 이력
+          </span></h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <button
+          class="cta-gradient text-[#0B0E12] px-3 sm:px-4 py-2 rounded text-sm hover-lift flex items-center gap-2 font-bold"
+          title="CSV 내보내기">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">CSV 내보내기</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 p-6 pt-[86px] flex flex-col gap-6 overflow-hidden">
+
+      <!-- Filter Bar -->
+      <div
+        class="glass-panel p-0 lg:p-4 rounded-xl flex flex-col lg:flex-row items-stretch lg:items-center gap-4 lg:gap-6 fade-in-up"
+        style="animation-delay: 0.1s;">
+        <div class="flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-4 lg:gap-3 flex-1">
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">추론 일자</label>
+            <div
+              class="flex items-center gap-2 bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 w-full lg:w-64 hover:border-gray-500 transition-colors">
+              <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+              <span class="text-sm text-gray-300">2025-12-01</span>
+              <span class="text-gray-600">~</span>
+              <span class="text-sm text-gray-300">오늘</span>
+            </div>
+          </div>
+
+          <div class="hidden lg:block w-px h-8 bg-gray-800 mx-2"></div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">검토 상태</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-36">
+              <option value="all">전체</option>
+              <option value="pending">미확인</option>
+              <option value="verified">확인 완료</option>
+              <option value="needs_fix">수정 필요</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">모델</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-52">
+              <option value="all">전체 모델</option>
+              <option value="B0">SegFormer-B0 (경량)</option>
+              <option value="B2">SegFormer-B2 (표준)</option>
+              <option value="B3">SegFormer-B3 (고정밀)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hidden lg:block">
+          <button class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="새로고침">
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+
+      </div>
+
+      <!-- Data Grid -->
+      <div class="glass-panel flex-1 rounded-lg overflow-hidden flex flex-col fade-in-up"
+        style="animation-delay: 0.2s;">
+        <div class="flex-1 overflow-auto custom-scroll">
+          <table class="w-full border-collapse">
+            <thead class="sticky top-0 z-10 th-glass">
+              <tr>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  추론 일시</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  모델</th>
+                <th
+                  class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  추론 대상 파일</th>
+                <th
+                  class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  탐지 객체 (논/밭/과수원/시설)</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  평균 신뢰도</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  상태 (Status)</th>
+                <th
+                  class="hidden sm:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  검토 상태</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800/50" id="inference-table-body">
+
+              <!-- Row 1: SUCCESS, 확인 완료 -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer">
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2026-01-02 15:12:48</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B2-v.1.0</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">ortho_2026-01-02_A03.tif</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-300 font-mono">32 / 18 / 4 / 5</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-24">
+                    <div class="flex justify-between text-xs text-gray-400">
+                      <span>92.4%</span>
+                      <span class="text-emerald-500">High</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500" style="width: 92%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">
+                    SUCCESS
+                  </span>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-900/10 text-emerald-400 border border-emerald-900/30">확인 완료</span>
+                </td>
+              </tr>
+
+              <!-- Row 2: SUCCESS, 미확인 -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer">
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2026-01-02 14:38:21</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B0-v.1.1</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">ortho_2026-01-02_B01.tif</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-300 font-mono">21 / 26 / 8 / 2</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-24">
+                    <div class="flex justify-between text-xs text-gray-400">
+                      <span>87.1%</span>
+                      <span class="text-gray-500">Avg</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500" style="width: 87%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">
+                    SUCCESS
+                  </span>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700">미확인</span>
+                </td>
+              </tr>
+
+              <!-- Row 3: SUCCESS, 수정 필요 (low confidence) -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer bg-yellow-900/5">
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2026-01-01 11:05:09</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B2-v.1.0</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">ortho_2026-01-01_C04.tif</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-300 font-mono">12 / 9 / 0 / 14</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-24">
+                    <div class="flex justify-between text-xs text-gray-400">
+                      <span>68.2%</span>
+                      <span class="text-yellow-500">Low</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-yellow-500" style="width: 68%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">
+                    SUCCESS
+                  </span>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/20 text-yellow-400 border border-yellow-900/40">수정 필요</span>
+                </td>
+              </tr>
+
+              <!-- Row 4: FAILED -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer bg-red-900/5">
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2025-12-31 17:42:55</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B3-v.1.0</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">ortho_2025-12-31_D02.tif</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-500 font-mono">- / - / - / -</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-red-500">! OOM</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-red-900/20 text-red-500 border border-red-900/50 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                    FAILED
+                  </span>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-500 border border-gray-700">N/A</span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="border-t border-gray-800 p-4 flex items-center justify-between bg-[#0B0E12]/50">
+          <span class="text-xs text-gray-500">총 <strong id="total-count">1,847</strong>건 중 <strong>1-50</strong> 표시</span>
+          <div class="flex gap-2">
+            <button class="lg:hidden p-2 rounded hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+              title="새로고침">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+            <div class="w-px h-4 bg-gray-700 my-auto mx-2"></div>
+            <button
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+                data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <button
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+                data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Inference Preview Modal -->
+  <div id="preview-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-card">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+          <i data-lucide="scan-search" class="w-5 h-5 text-[#C5A059]"></i>
+          <div>
+            <h3 class="text-base font-semibold text-white">추론 결과 미리보기</h3>
+            <p id="modal-filename" class="text-xs font-mono text-gray-500 mt-0.5">-</p>
+          </div>
+        </div>
+        <button id="modal-close" class="p-2 rounded hover:bg-white/5 text-gray-400 hover:text-white transition-colors" aria-label="닫기">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden custom-scroll">
+        <!-- Left: Image + Mask -->
+        <div class="flex-1 p-4 flex flex-col gap-3 min-h-[280px] lg:min-h-[400px]">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs uppercase tracking-wider text-gray-500 font-bold">정사영상 + 세그멘테이션 마스크</h4>
+            <button id="toggle-mask"
+              class="text-xs flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-700 hover:border-[#C5A059] text-gray-300 hover:text-[#C5A059] transition-colors">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+              <span id="toggle-mask-label">마스크 숨기기</span>
+            </button>
+          </div>
+          <div class="ortho-canvas flex-1 rounded-lg border border-gray-800 overflow-hidden">
+            <svg id="mask-svg" viewBox="0 0 800 500" class="w-full h-full" preserveAspectRatio="xMidYMid slice">
+              <g id="mask-group" class="mask-layer">
+                <!-- Polygons populated by JS -->
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right: Metadata Panel -->
+        <div class="lg:w-[320px] border-t lg:border-t-0 lg:border-l border-gray-800 p-5 flex flex-col gap-5 overflow-y-auto custom-scroll">
+          <!-- Inference Meta -->
+          <div class="flex flex-col gap-3">
+            <h4 class="text-xs uppercase tracking-wider text-gray-500 font-bold">추론 정보</h4>
+            <div class="flex flex-col gap-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">모델</span>
+                <span id="modal-model" class="text-gray-200 font-medium">-</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">추론 일시</span>
+                <span id="modal-time" class="text-gray-300 font-mono text-xs">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-500">평균 신뢰도</span>
+                <span id="modal-confidence" class="text-gray-200 font-mono">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-500">상태</span>
+                <span id="modal-status">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-500">검토 상태</span>
+                <span id="modal-review">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Class Legend + Counts -->
+          <div class="flex flex-col gap-3">
+            <h4 class="text-xs uppercase tracking-wider text-gray-500 font-bold">탐지 객체 (클래스별)</h4>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="legend-dot" style="background:#84cc16"></span>
+                  <span class="text-gray-300">논</span>
+                </div>
+                <span id="cnt-rice" class="text-gray-200 font-mono">-</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="legend-dot" style="background:#fbbf24"></span>
+                  <span class="text-gray-300">밭</span>
+                </div>
+                <span id="cnt-field" class="text-gray-200 font-mono">-</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="legend-dot" style="background:#15803d"></span>
+                  <span class="text-gray-300">과수원</span>
+                </div>
+                <span id="cnt-orchard" class="text-gray-200 font-mono">-</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="legend-dot" style="background:#f87171"></span>
+                  <span class="text-gray-300">시설</span>
+                </div>
+                <span id="cnt-facility" class="text-gray-200 font-mono">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col gap-2 mt-auto pt-4 border-t border-gray-800">
+            <button class="w-full bg-yellow-900/20 border border-yellow-900/40 text-yellow-400 hover:bg-yellow-900/30 hover:text-yellow-300 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2">
+              <i data-lucide="flag" class="w-4 h-4"></i> 수정 필요로 표시
+            </button>
+            <button class="w-full bg-emerald-900/20 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-900/30 hover:text-emerald-300 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2">
+              <i data-lucide="check" class="w-4 h-4"></i> 검토 완료
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    lucide.createIcons();
+
+    // Mock Data Generation - 추론 결과 이력
+    const models = [
+      'SegFormer-B0-v.1.0', 'SegFormer-B0-v.1.1',
+      'SegFormer-B2-v.1.0', 'SegFormer-B2-v.2.0',
+      'SegFormer-B3-v.1.0'
+    ];
+    const fileTags = ['A01', 'A03', 'B01', 'B07', 'C04', 'C12', 'D02', 'E15', 'F08'];
+    const reviewStates = [
+      { key: 'verified', label: '확인 완료', cls: 'bg-emerald-900/10 text-emerald-400 border-emerald-900/30' },
+      { key: 'pending',  label: '미확인',   cls: 'bg-gray-800 text-gray-400 border-gray-700' },
+      { key: 'needs_fix',label: '수정 필요', cls: 'bg-yellow-900/20 text-yellow-400 border-yellow-900/40' }
+    ];
+
+    function pickReview(confidence, isFail) {
+      if (isFail) return { key: 'na', label: 'N/A', cls: 'bg-gray-800 text-gray-500 border-gray-700' };
+      if (confidence < 0.75) return reviewStates[2]; // 수정 필요
+      // 신뢰도 정상이면 확인/미확인 무작위
+      return Math.random() < 0.4 ? reviewStates[0] : reviewStates[1];
+    }
+
+    function generateInferenceData(count) {
+      const data = [];
+      const now = new Date();
+
+      for (let i = 0; i < count; i++) {
+        // 추론은 평균 30분 간격으로 발생한다고 가정
+        const time = new Date(now - i * 30 * 60 * 1000);
+        const isFail = Math.random() < 0.04; // 4% 실패율 (OOM 등)
+        const model = models[Math.floor(Math.random() * models.length)];
+        const tag = fileTags[Math.floor(Math.random() * fileTags.length)];
+        const dateStr = time.toISOString().slice(0, 10);
+        const filename = `ortho_${dateStr}_${tag}.tif`;
+
+        // 클래스별 탐지 객체 수: 논 / 밭 / 과수원 / 시설
+        const counts = isFail ? null : {
+          rice: Math.floor(Math.random() * 40),
+          field: Math.floor(Math.random() * 35),
+          orchard: Math.floor(Math.random() * 12),
+          facility: Math.floor(Math.random() * 18)
+        };
+
+        // 평균 신뢰도: 0.65 ~ 0.97
+        const confidence = isFail ? 0 : 0.65 + Math.random() * 0.32;
+        const review = pickReview(confidence, isFail);
+
+        data.push({
+          time: time.toISOString().replace('T', ' ').slice(0, 19),
+          model: model,
+          filename: filename,
+          counts: counts,
+          confidence: confidence,
+          status: isFail ? 'FAILED' : 'SUCCESS',
+          review: review
+        });
+      }
+      return data;
+    }
+
+    // Render Table
+    const tableBody = document.getElementById('inference-table-body');
+    if (tableBody) {
+      tableBody.innerHTML = ''; // Clear static rows
+      const inferenceData = generateInferenceData(50);
+
+      const totalCount = document.getElementById('total-count');
+      if (totalCount) totalCount.innerText = '1,847';
+
+      inferenceData.forEach(row => {
+        const isFail = row.status === 'FAILED';
+        const isLowConf = !isFail && row.confidence < 0.75;
+
+        const statusBadge = isFail
+          ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-red-900/20 text-red-500 border border-red-900/50 shadow-[0_0_10px_rgba(239,68,68,0.2)]">FAILED</span>'
+          : '<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">SUCCESS</span>';
+
+        let rowClass = 'hover:bg-white/5 transition-colors group cursor-pointer';
+        if (isFail) rowClass += ' bg-red-900/5';
+        else if (isLowConf) rowClass += ' bg-yellow-900/5';
+
+        // 클래스별 객체 수 표시
+        const countsCell = row.counts
+          ? `<span class="text-sm text-gray-300 font-mono">${row.counts.rice} / ${row.counts.field} / ${row.counts.orchard} / ${row.counts.facility}</span>`
+          : `<span class="text-sm text-gray-500 font-mono">- / - / - / -</span>`;
+
+        // 신뢰도 바
+        let confCell;
+        if (isFail) {
+          confCell = `<span class="text-sm font-mono text-red-500">! OOM</span>`;
+        } else {
+          const pct = (row.confidence * 100).toFixed(1);
+          const pctInt = Math.round(row.confidence * 100);
+          let barColor, label, labelCls;
+          if (row.confidence >= 0.85) { barColor = 'bg-emerald-500'; label = 'High'; labelCls = 'text-emerald-500'; }
+          else if (row.confidence >= 0.75) { barColor = 'bg-emerald-500'; label = 'Avg'; labelCls = 'text-gray-500'; }
+          else { barColor = 'bg-yellow-500'; label = 'Low'; labelCls = 'text-yellow-500'; }
+
+          confCell = `
+            <div class="flex flex-col gap-1 w-24">
+              <div class="flex justify-between text-xs text-gray-400">
+                <span>${pct}%</span>
+                <span class="${labelCls}">${label}</span>
+              </div>
+              <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full ${barColor}" style="width: ${pctInt}%"></div>
+              </div>
+            </div>`;
+        }
+
+        const reviewBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${row.review.cls}">${row.review.label}</span>`;
+
+        let dotColor = 'bg-emerald-500';
+        if (isFail) dotColor = 'bg-red-500';
+        else if (isLowConf) dotColor = 'bg-yellow-500';
+
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        tr.innerHTML = `
+          <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white whitespace-nowrap">${row.time}</td>
+          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full ${dotColor}"></div>
+              <span class="text-sm font-medium text-gray-200">${row.model}</span>
+            </div>
+          </td>
+          <td class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300 whitespace-nowrap">${row.filename}</td>
+          <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${countsCell}</td>
+          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${confCell}</td>
+          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${statusBadge}</td>
+          <td class="hidden sm:table-cell py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${reviewBadge}</td>
+        `;
+        // 행 클릭 → 모달 오픈 (실패 행은 미리보기 비활성)
+        if (!isFail) {
+          tr.addEventListener('click', () => openPreviewModal(row));
+        } else {
+          tr.classList.remove('cursor-pointer');
+          tr.classList.add('cursor-not-allowed');
+        }
+        tableBody.appendChild(tr);
+      });
+      lucide.createIcons(); // Re-run for dynamic content
+    }
+
+    // ================================
+    // Inference Preview Modal
+    // ================================
+    const modal = document.getElementById('preview-modal');
+    const modalClose = document.getElementById('modal-close');
+    const toggleMaskBtn = document.getElementById('toggle-mask');
+    const toggleMaskLabel = document.getElementById('toggle-mask-label');
+    const maskGroup = document.getElementById('mask-group');
+
+    // 클래스별 색상 (legend 도트와 동일)
+    const CLASS_COLORS = {
+      rice:     { fill: 'rgba(132, 204, 22, 0.55)', stroke: '#84cc16' },
+      field:    { fill: 'rgba(251, 191, 36, 0.55)', stroke: '#fbbf24' },
+      orchard:  { fill: 'rgba(21, 128, 61, 0.55)',  stroke: '#15803d' },
+      facility: { fill: 'rgba(248, 113, 113, 0.55)', stroke: '#f87171' }
+    };
+
+    // 시드 기반 PRNG (모달이 열릴 때마다 같은 파일이면 같은 마스크 형태가 나오도록)
+    function seededRandom(seed) {
+      let s = 0;
+      for (let i = 0; i < seed.length; i++) s = (s * 31 + seed.charCodeAt(i)) >>> 0;
+      return () => {
+        s = (s * 1664525 + 1013904223) >>> 0;
+        return s / 0xFFFFFFFF;
+      };
+    }
+
+    function buildMaskSVG(row) {
+      maskGroup.innerHTML = '';
+      if (!row.counts) return;
+
+      const rng = seededRandom(row.filename);
+      const VW = 800, VH = 500;
+
+      // 클래스별로 폴리곤 생성. 표시 개수 = 실제 카운트의 1/3 정도 (가독성)
+      const classOrder = ['rice', 'field', 'orchard', 'facility'];
+      classOrder.forEach((cls, idx) => {
+        const count = row.counts[cls];
+        const display = Math.max(1, Math.min(8, Math.ceil(count / 4)));
+        const colors = CLASS_COLORS[cls];
+
+        for (let i = 0; i < display; i++) {
+          // 영역을 4개 사분면으로 나눠서 클래스별 위치 편향
+          const cx = (idx % 2 === 0 ? 100 : 500) + rng() * 250;
+          const cy = (idx < 2 ? 80 : 280) + rng() * 160;
+
+          // 자연스러운 다각형: 6~9개 정점을 중심점 주변에 배치
+          const verts = 6 + Math.floor(rng() * 4);
+          const radiusBase = 30 + rng() * 60;
+          const points = [];
+          for (let v = 0; v < verts; v++) {
+            const angle = (v / verts) * Math.PI * 2 + rng() * 0.4;
+            const r = radiusBase * (0.7 + rng() * 0.6);
+            const px = cx + Math.cos(angle) * r;
+            const py = cy + Math.sin(angle) * r;
+            points.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+          }
+
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('points', points.join(' '));
+          poly.setAttribute('fill', colors.fill);
+          poly.setAttribute('stroke', colors.stroke);
+          poly.setAttribute('stroke-width', '1.5');
+          maskGroup.appendChild(poly);
+        }
+        // 미사용 변수 경고 회피
+        void VW; void VH;
+      });
+    }
+
+    function openPreviewModal(row) {
+      // 메타 채우기
+      document.getElementById('modal-filename').textContent = row.filename;
+      document.getElementById('modal-model').textContent = row.model;
+      document.getElementById('modal-time').textContent = row.time;
+      document.getElementById('modal-confidence').textContent = `${(row.confidence * 100).toFixed(1)}%`;
+
+      // 상태 배지
+      document.getElementById('modal-status').innerHTML =
+        '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">SUCCESS</span>';
+
+      // 검토 상태 배지
+      document.getElementById('modal-review').innerHTML =
+        `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${row.review.cls}">${row.review.label}</span>`;
+
+      // 클래스별 카운트
+      document.getElementById('cnt-rice').textContent     = row.counts.rice;
+      document.getElementById('cnt-field').textContent    = row.counts.field;
+      document.getElementById('cnt-orchard').textContent  = row.counts.orchard;
+      document.getElementById('cnt-facility').textContent = row.counts.facility;
+
+      // 마스크 SVG 빌드
+      buildMaskSVG(row);
+
+      // 마스크 토글 초기 상태: 표시
+      maskGroup.classList.remove('hidden-mask');
+      toggleMaskLabel.textContent = '마스크 숨기기';
+
+      // 오픈
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      lucide.createIcons();
+    }
+
+    function closePreviewModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    modalClose.addEventListener('click', closePreviewModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closePreviewModal(); // 백드롭 클릭
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('open')) closePreviewModal();
+    });
+
+    toggleMaskBtn.addEventListener('click', () => {
+      const hidden = maskGroup.classList.toggle('hidden-mask');
+      toggleMaskLabel.textContent = hidden ? '마스크 보기' : '마스크 숨기기';
+    });
+
+    // Sidebar Toggle Logic
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle('-translate-x-full');
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth < 1024) {
+        if (sidebar && !sidebar.contains(e.target) && mobileMenuBtn && !mobileMenuBtn.contains(e.target)) {
+          sidebar.classList.add('-translate-x-full');
+        }
+      }
+    });
+
+  </script>
+</body>
+
+</html>

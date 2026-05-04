@@ -1,0 +1,279 @@
+/* MIS MIS Design Guidelines - v3.0 Premium Seamless */
+/* Core Variables */
+:root {
+  --bg-canvas: #050505;
+  --bg-surface: #0A0A0A;
+  --text-main: #E5E5E5;
+  --text-muted: #666666;
+  --accent-gold: #C5A059;
+  --divider: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.03);
+
+  /* Status Colors */
+  --status-running: #10B981;
+  --status-error: #EF4444;
+  --status-idle: #EAB308;
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  overflow: hidden;
+  /* App-like feel */
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.font-thin-num {
+  font-weight: 200;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Noise Overlay */
+.noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.05;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* App Layout */
+.app-container {
+  display: flex;
+  height: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+/* Sidebar */
+aside.sidebar {
+  width: 260px;
+  background-color: #0B0E12;
+  border-right: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.menu-item {
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: #151A20;
+  color: var(--text-main);
+}
+
+.menu-item.active {
+  background-color: #1A1F26;
+  color: var(--text-main);
+}
+
+.menu-item.active i {
+  color: var(--accent-gold);
+}
+
+.active-indicator {
+  background-color: var(--accent-gold);
+}
+
+/* Main Content */
+main.content-area {
+  flex: 1;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #0B0E12 0%, #0F1318 50%, #151A20 100%);
+}
+
+/* KPI Strip */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--divider);
+  padding: 2rem 0;
+}
+
+.kpi-item {
+  padding: 0 40px;
+  border-right: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kpi-item:last-child {
+  border-right: none;
+}
+
+.kpi-label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.kpi-value {
+  font-size: 2.5rem;
+  font-weight: 200;
+  color: var(--text-main);
+}
+
+/* Machine Sequencer (Timeline) */
+.sequencer-container {
+  padding: 40px;
+}
+
+.sequencer-row {
+  display: flex;
+  align-items: center;
+  height: 60px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sequencer-label {
+  width: 120px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.sequencer-track {
+  flex: 1;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sequencer-segment {
+  position: absolute;
+  height: 100%;
+  top: 0;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.sequencer-segment:hover {
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Minimalist Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 1px solid var(--divider);
+}
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.data-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Animations */
+@keyframes pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-running);
+  animation: pulse-dot 2s infinite;
+}
+
+/* Utilities */
+.text-gold {
+  color: var(--accent-gold);
+}
+
+.text-running {
+  color: var(--status-running);
+}
+
+.text-error {
+  color: var(--status-error);
+}
+
+.text-idle {
+  color: var(--status-idle);
+}
+
+/* Buttons */
+.cta-gradient {
+  background: linear-gradient(135deg, #E8D5B5 0%, #C5A059 100%);
+  box-shadow: 0 10px 40px rgba(197, 160, 89, 0.25);
+  border: none;
+  cursor: pointer;
+}
+
+.cta-gradient:hover {
+  box-shadow: 0 15px 50px rgba(197, 160, 89, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-minimal {
+  border: 1px solid var(--text-muted);
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-minimal:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>모델 성능 분석 - DOI AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/mis-style.css">
+  <style>
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbar for Table */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Table Enhancements */
+    .th-glass {
+      background: rgba(11, 14, 18, 0.95);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Mobile: shrink table text/badges to fit narrow viewports */
+    @media (max-width: 767px) {
+      table .text-sm { font-size: 11px; line-height: 1.3; }
+      table .text-xs { font-size: 10px; line-height: 1.2; }
+      table .text-\[11px\] { font-size: 9px; }
+      table .font-mono { letter-spacing: -0.02em; }
+    }
+  </style>
+</head>
+
+<body
+  class="flex h-screen w-screen bg-gradient-to-br from-[#0B0E12] via-[#0F1318] to-[#151A20] text-[#E6E9EF] overflow-hidden select-none">
+
+  <div class="noise-overlay"></div>
+
+  <!-- Sidebar (Consistent with Index) -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0B0E12] border-r border-[#2A313B] flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 lg:static lg:inset-auto lg:flex-shrink-0">
+    <!-- User changed padding to p-12 -->
+    <div class="p-12 flex flex-col items-center">
+      <div
+        class="w-16 h-16 rounded-full border border-[#2A313B] flex items-center justify-center mb-4 cursor-pointer hover:border-[#C5A059] transition-colors group relative overflow-hidden">
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Profile"
+          class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">
+      </div>
+      <div class="text-center">
+        <h2 id="sidebar-name" class="text-[16px] font-bold text-[#E6E9EF] tracking-wide">김 관리자</h2>
+        <p id="sidebar-team" class="text-[12px] text-[#A9B0BC] mt-1 font-medium">생산 1팀</p>
+      </div>
+
+      <!-- Mobile Only Icons -->
+      <div class="flex lg:hidden items-center gap-4 mt-6">
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-4 space-y-1">
+      <a href="index.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">홈</span>
+      </a>
+
+      <a href="m1_model_training.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 학습 관리</span>
+      </a>
+
+      <a href="m2_training_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="history" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">학습 이력 조회</span>
+      </a>
+
+      <a href="m3_inference_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="scan-search" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">추론 결과 이력</span>
+      </a>
+
+      <a href="m4_finetuning.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="repeat" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">파인튜닝 시스템</span>
+      </a>
+
+      <a href="m5_model_performance.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 bg-[#1A1F26] text-[#E6E9EF] transition-all duration-200 group border-l-2 border-[#C5A059]">
+        <i data-lucide="bar-chart-3" class="w-5 h-5 text-[#C5A059]"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 성능 분석</span>
+      </a>
+
+    </nav>
+
+    <div class="p-8">
+      <h2 class="text-2xl text-[#D4C09E] font-semibold text-gradient-gold tracking-tighter">DOI AI</h2>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col min-w-0 relative">
+
+    <!-- Top Bar -->
+    <header
+      class="fixed top-0 right-0 left-0 lg:left-[260px] h-[64px] border-b border-[#2A313B] flex items-center justify-between px-4 lg:px-8 bg-[#0B0E12]/80 backdrop-blur-md z-10 transition-all duration-300">
+      <div class="flex items-center gap-4">
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="lg:hidden text-[#A9B0BC] hover:text-[#E6E9EF]">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <h1 class="text-xl font-light tracking-tight text-white"><span class="font-medium text-[#C5A059]">모델 성능 분석</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <button
+          class="cta-gradient text-[#0B0E12] px-3 sm:px-4 py-2 rounded text-sm hover-lift flex items-center gap-2 font-bold"
+          title="CSV 내보내기">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">CSV 내보내기</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 p-6 pt-[86px] flex flex-col gap-6 overflow-hidden">
+
+      <!-- Filter Bar -->
+      <div
+        class="glass-panel p-0 lg:p-4 rounded-xl flex flex-col lg:flex-row items-stretch lg:items-center gap-4 lg:gap-6 fade-in-up"
+        style="animation-delay: 0.1s;">
+        <div class="flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-4 lg:gap-3 flex-1">
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">학습 완료일</label>
+            <div
+              class="flex items-center gap-2 bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 w-full lg:w-64 hover:border-gray-500 transition-colors">
+              <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+              <span class="text-sm text-gray-300">2025-09-01</span>
+              <span class="text-gray-600">~</span>
+              <span class="text-sm text-gray-300">오늘</span>
+            </div>
+          </div>
+
+          <div class="hidden lg:block w-px h-8 bg-gray-800 mx-2"></div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">모델 백본</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-44">
+              <option value="all">전체 백본</option>
+              <option value="B0">SegFormer-B0 (경량)</option>
+              <option value="B2">SegFormer-B2 (표준)</option>
+              <option value="B3">SegFormer-B3 (고정밀)</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">운영 상태</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-36">
+              <option value="all">전체</option>
+              <option value="production">운영중</option>
+              <option value="staging">검증중</option>
+              <option value="archived">보관</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">정렬</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-36">
+              <option value="latest">최신순</option>
+              <option value="miou">mIoU 높은순</option>
+              <option value="data">데이터량 많은순</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hidden lg:block">
+          <button class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="새로고침">
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+
+      </div>
+
+      <!-- Data Grid -->
+      <div class="glass-panel flex-1 rounded-lg overflow-hidden flex flex-col fade-in-up"
+        style="animation-delay: 0.2s;">
+        <div class="flex-1 overflow-auto custom-scroll">
+          <table class="w-full border-collapse">
+            <thead class="sticky top-0 z-10 th-glass">
+              <tr>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  모델 버전</th>
+                <th
+                  class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  학습 완료일</th>
+                <th
+                  class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  학습 데이터량</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  mIoU (전체)</th>
+                <th
+                  class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  클래스별 IoU (논/밭/과수원/시설)</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  운영 상태</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800/50" id="performance-table-body">
+
+              <!-- Row 1: PRODUCTION (current best) -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer bg-emerald-900/5">
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B2-v.2.0</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2026-01-02</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-300">5,420장 <span class="text-gray-500">/ 1.4B px</span></td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-28">
+                    <div class="flex justify-between text-xs">
+                      <span class="text-gray-300 font-mono">0.847</span>
+                      <span class="text-emerald-500">High</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500" style="width: 84%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">0.89 / 0.86 / 0.81 / 0.72</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">
+                    PRODUCTION
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Row 2: STAGING -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer">
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B3-v.1.0</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2026-01-01</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-300">5,420장 <span class="text-gray-500">/ 1.4B px</span></td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-28">
+                    <div class="flex justify-between text-xs">
+                      <span class="text-gray-300 font-mono">0.861</span>
+                      <span class="text-emerald-500">High</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500" style="width: 86%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">0.91 / 0.88 / 0.84 / 0.75</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-900/20 text-blue-400 border border-blue-900/50">
+                    STAGING
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Row 3: PRODUCTION (lightweight) -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer">
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span class="text-sm font-medium text-gray-200">SegFormer-B0-v.1.1</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white">2025-12-20</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-300">4,180장 <span class="text-gray-500">/ 1.1B px</span></td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-28">
+                    <div class="flex justify-between text-xs">
+                      <span class="text-gray-300 font-mono">0.782</span>
+                      <span class="text-gray-500">Avg</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500" style="width: 78%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300">0.84 / 0.81 / 0.74 / 0.66</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/50">
+                    PRODUCTION
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Row 4: ARCHIVED -->
+              <tr class="hover:bg-white/5 transition-colors group cursor-pointer opacity-60">
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-gray-600"></div>
+                    <span class="text-sm font-medium text-gray-400">SegFormer-B2-v.1.0</span>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-500 group-hover:text-white">2025-11-15</td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm text-gray-500">3,210장 <span class="text-gray-600">/ 0.8B px</span></td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <div class="flex flex-col gap-1 w-28">
+                    <div class="flex justify-between text-xs">
+                      <span class="text-gray-400 font-mono">0.724</span>
+                      <span class="text-yellow-500">Low</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-yellow-500" style="width: 72%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-500">0.78 / 0.75 / 0.69 / 0.61</td>
+                <td class="py-3 px-3 md:py-4 md:px-4">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-500 border border-gray-700">
+                    ARCHIVED
+                  </span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="border-t border-gray-800 p-4 flex items-center justify-between bg-[#0B0E12]/50">
+          <span class="text-xs text-gray-500">총 <strong id="total-count">23</strong>개 모델 중 <strong>1-23</strong> 표시 · 운영중 <strong id="prod-count" class="text-emerald-400">2</strong>개</span>
+          <div class="flex gap-2">
+            <button class="lg:hidden p-2 rounded hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+              title="새로고침">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+            <div class="w-px h-4 bg-gray-700 my-auto mx-2"></div>
+            <button
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+                data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <button
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+                data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    lucide.createIcons();
+
+    // Mock Data Generation - 모델 성능 분석
+    // 백본별 특성: B0 = 경량/빠름/낮은 정확도, B2 = 표준, B3 = 고정밀/느림/높은 정확도
+    const backbones = [
+      { name: 'B0', baseMiou: 0.74, dataScale: 0.9 },
+      { name: 'B2', baseMiou: 0.81, dataScale: 1.0 },
+      { name: 'B3', baseMiou: 0.85, dataScale: 1.0 }
+    ];
+    const stateConfigs = [
+      { key: 'production', label: 'PRODUCTION', cls: 'bg-emerald-900/20 text-emerald-500 border-emerald-900/50', dot: 'bg-emerald-500', rowBg: 'bg-emerald-900/5', weight: 15 },
+      { key: 'staging',    label: 'STAGING',    cls: 'bg-blue-900/20 text-blue-400 border-blue-900/50',          dot: 'bg-blue-500',    rowBg: '',                  weight: 25 },
+      { key: 'archived',   label: 'ARCHIVED',   cls: 'bg-gray-800 text-gray-500 border-gray-700',                dot: 'bg-gray-600',    rowBg: '',                  weight: 60 }
+    ];
+
+    function pickWeighted(items, getWeight) {
+      const total = items.reduce((s, it) => s + getWeight(it), 0);
+      let r = Math.random() * total;
+      for (const it of items) {
+        if ((r -= getWeight(it)) < 0) return it;
+      }
+      return items[items.length - 1];
+    }
+
+    function generateModelData(count) {
+      const data = [];
+      const now = new Date();
+
+      // 버전 카운터: 백본별로 v.1.0, v.1.1 ... 식으로 증가
+      const versionCounters = { B0: 0, B2: 0, B3: 0 };
+
+      for (let i = 0; i < count; i++) {
+        // 학습은 평균 5일에 1번 완료된다고 가정
+        const date = new Date(now - i * 5 * 24 * 3600 * 1000);
+        const dateStr = date.toISOString().slice(0, 10);
+
+        const backbone = backbones[Math.floor(Math.random() * backbones.length)];
+        versionCounters[backbone.name]++;
+        const major = Math.floor(versionCounters[backbone.name] / 5) + 1;
+        const minor = versionCounters[backbone.name] % 5;
+        const version = `SegFormer-${backbone.name}-v.${major}.${minor}`;
+
+        // 학습 데이터량: 시간이 지날수록 증가 (최신이 더 많음)
+        const sheets = Math.round((2000 + (count - i) * 80 + Math.random() * 500) * backbone.dataScale);
+        const pixels = ((sheets * 0.27) / 1000).toFixed(1); // GB px 환산용 근사
+
+        // mIoU: 백본 기준 + 데이터량 기여 + 노이즈
+        const dataBonus = Math.min((sheets - 2000) / 8000 * 0.08, 0.08);
+        const noise = (Math.random() - 0.5) * 0.04;
+        const miou = Math.max(0.62, Math.min(0.92, backbone.baseMiou + dataBonus + noise));
+
+        // 클래스별 IoU: 시설이 가장 어렵다는 가정 (-0.10), 논이 쉬움 (+0.04)
+        const iouRice    = Math.min(0.95, miou + 0.04 + (Math.random() - 0.5) * 0.02);
+        const iouField   = Math.min(0.95, miou + 0.02 + (Math.random() - 0.5) * 0.02);
+        const iouOrchard = Math.max(0.55, miou - 0.04 + (Math.random() - 0.5) * 0.03);
+        const iouFacility = Math.max(0.50, miou - 0.10 + (Math.random() - 0.5) * 0.04);
+
+        const state = pickWeighted(stateConfigs, s => s.weight);
+
+        data.push({
+          version: version,
+          backbone: backbone.name,
+          date: dateStr,
+          sheets: sheets,
+          pixels: pixels,
+          miou: miou,
+          iouRice: iouRice,
+          iouField: iouField,
+          iouOrchard: iouOrchard,
+          iouFacility: iouFacility,
+          state: state
+        });
+      }
+
+      // 최신순 정렬 (date 내림차순)
+      data.sort((a, b) => b.date.localeCompare(a.date));
+      return data;
+    }
+
+    // Render Table
+    const tableBody = document.getElementById('performance-table-body');
+    if (tableBody) {
+      tableBody.innerHTML = ''; // Clear static rows
+      const modelData = generateModelData(23);
+
+      document.getElementById('total-count').innerText = modelData.length;
+      document.getElementById('prod-count').innerText =
+        modelData.filter(m => m.state.key === 'production').length;
+
+      modelData.forEach(row => {
+        const isArchived = row.state.key === 'archived';
+        let rowClass = 'hover:bg-white/5 transition-colors group cursor-pointer';
+        if (row.state.rowBg) rowClass += ' ' + row.state.rowBg;
+        if (isArchived) rowClass += ' opacity-60';
+
+        // mIoU 바
+        const miouPct = Math.round(row.miou * 100);
+        let barColor, label, labelCls;
+        if (row.miou >= 0.83) { barColor = 'bg-emerald-500'; label = 'High'; labelCls = 'text-emerald-500'; }
+        else if (row.miou >= 0.75) { barColor = 'bg-emerald-500'; label = 'Avg'; labelCls = 'text-gray-500'; }
+        else { barColor = 'bg-yellow-500'; label = 'Low'; labelCls = 'text-yellow-500'; }
+
+        const versionTextCls = isArchived ? 'text-gray-400' : 'text-gray-200';
+        const dateTextCls = isArchived ? 'text-gray-500' : 'text-gray-400';
+        const dataTextCls = isArchived ? 'text-gray-500' : 'text-gray-300';
+        const iouTextCls = isArchived ? 'text-gray-500' : 'text-gray-300';
+        const miouTextCls = isArchived ? 'text-gray-400' : 'text-gray-300';
+
+        const stateBadge = isArchived
+          ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${row.state.cls}">${row.state.label}</span>`
+          : `<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${row.state.cls}">${row.state.label}</span>`;
+
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        tr.innerHTML = `
+          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full ${row.state.dot}"></div>
+              <span class="text-sm font-medium ${versionTextCls}">${row.version}</span>
+            </div>
+          </td>
+          <td class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono ${dateTextCls} group-hover:text-white whitespace-nowrap">${row.date}</td>
+          <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm ${dataTextCls} whitespace-nowrap">${row.sheets.toLocaleString()}장 <span class="text-gray-500">/ ${row.pixels}B px</span></td>
+          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+            <div class="flex flex-col gap-1 w-28">
+              <div class="flex justify-between text-xs">
+                <span class="${miouTextCls} font-mono">${row.miou.toFixed(3)}</span>
+                <span class="${labelCls}">${label}</span>
+              </div>
+              <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full ${barColor}" style="width: ${miouPct}%"></div>
+              </div>
+            </div>
+          </td>
+          <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono ${iouTextCls} whitespace-nowrap">${row.iouRice.toFixed(2)} / ${row.iouField.toFixed(2)} / ${row.iouOrchard.toFixed(2)} / ${row.iouFacility.toFixed(2)}</td>
+          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${stateBadge}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    // Sidebar Toggle Logic
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle('-translate-x-full');
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth < 1024) {
+        if (sidebar && !sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+          sidebar.classList.add('-translate-x-full');
+        }
+      }
+    });
+
+  </script>
+</body>
+
+</html>

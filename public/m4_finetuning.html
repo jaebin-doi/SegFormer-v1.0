@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>파인튜닝 시스템 - DOI AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/mis-style.css">
+  <style>
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbar for Table */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Table Enhancements */
+    .th-glass {
+      background: rgba(11, 14, 18, 0.95);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Mobile: shrink table text/badges to fit narrow viewports */
+    @media (max-width: 767px) {
+      table .text-sm { font-size: 11px; line-height: 1.3; }
+      table .text-xs { font-size: 10px; line-height: 1.2; }
+      table .text-\[11px\] { font-size: 9px; }
+      table .font-mono { letter-spacing: -0.02em; }
+    }
+  </style>
+</head>
+
+<body
+  class="flex h-screen w-screen bg-gradient-to-br from-[#0B0E12] via-[#0F1318] to-[#151A20] text-[#E6E9EF] overflow-hidden select-none">
+
+  <div class="noise-overlay"></div>
+
+  <!-- Sidebar (Consistent with Index) -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0B0E12] border-r border-[#2A313B] flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 lg:static lg:inset-auto lg:flex-shrink-0">
+    <div class="p-12 flex flex-col items-center">
+      <div
+        class="w-16 h-16 rounded-full border border-[#2A313B] flex items-center justify-center mb-4 cursor-pointer hover:border-[#C5A059] transition-colors group relative overflow-hidden">
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Profile"
+          class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">
+      </div>
+      <div class="text-center">
+        <h2 id="sidebar-name" class="text-[16px] font-bold text-[#E6E9EF] tracking-wide">김 관리자</h2>
+        <p id="sidebar-team" class="text-[12px] text-[#A9B0BC] mt-1 font-medium">생산 1팀</p>
+      </div>
+
+      <!-- Mobile Only Icons -->
+      <div class="flex lg:hidden items-center gap-4 mt-6">
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-4 space-y-1">
+      <a href="index.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">홈</span>
+      </a>
+
+      <a href="m1_model_training.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 학습 관리</span>
+      </a>
+
+      <a href="m2_training_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="history" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">학습 이력 조회</span>
+      </a>
+
+      <a href="m3_inference_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="scan-search" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">추론 결과 이력</span>
+      </a>
+
+      <a href="m4_finetuning.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 bg-[#1A1F26] text-[#E6E9EF] transition-all duration-200 group border-l-2 border-[#C5A059]">
+        <i data-lucide="repeat" class="w-5 h-5 text-[#C5A059]"></i>
+        <span class="text-[14px] font-medium tracking-tight">파인튜닝 시스템</span>
+      </a>
+
+      <a href="m5_model_performance.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 성능 분석</span>
+      </a>
+
+    </nav>
+
+    <div class="p-8">
+      <h2 class="text-2xl text-[#D4C09E] font-semibold text-gradient-gold tracking-tighter">DOI AI</h2>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col min-w-0 relative">
+
+    <!-- Top Bar -->
+    <header
+      class="fixed top-0 right-0 left-0 lg:left-[260px] h-[64px] border-b border-[#2A313B] flex items-center justify-between px-4 lg:px-8 bg-[#0B0E12]/80 backdrop-blur-md z-10 transition-all duration-300">
+      <div class="flex items-center gap-4">
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="lg:hidden text-[#A9B0BC] hover:text-[#E6E9EF]">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <h1 class="text-xl font-light tracking-tight text-white"><span class="font-medium text-[#C5A059]">파인튜닝 시스템
+          </span></h1>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button
+          class="bg-[#1A1F26] border border-gray-700 hover:border-gray-500 text-gray-300 px-2.5 sm:px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors"
+          title="CSV 내보내기">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden md:inline">CSV 내보내기</span>
+        </button>
+        <button id="btn-start-finetune"
+          class="cta-gradient text-[#0B0E12] px-3 sm:px-4 py-2 rounded text-sm hover-lift flex items-center gap-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled title="선택 항목 파인튜닝 시작">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">선택 항목 파인튜닝 시작</span>
+          <span class="sm:hidden">시작</span>
+          (<span id="selected-count">0</span>)
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 p-6 pt-[86px] flex flex-col gap-6 overflow-hidden">
+
+      <!-- Filter Bar -->
+      <div
+        class="glass-panel p-0 lg:p-4 rounded-xl flex flex-col lg:flex-row items-stretch lg:items-center gap-4 lg:gap-6 fade-in-up"
+        style="animation-delay: 0.1s;">
+        <div class="flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-4 lg:gap-3 flex-1">
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">등록 일자</label>
+            <div
+              class="flex items-center gap-2 bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 w-full lg:w-64 hover:border-gray-500 transition-colors">
+              <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+              <span class="text-sm text-gray-300">2025-12-01</span>
+              <span class="text-gray-600">~</span>
+              <span class="text-sm text-gray-300">오늘</span>
+            </div>
+          </div>
+
+          <div class="hidden lg:block w-px h-8 bg-gray-800 mx-2"></div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">보정 사유</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-40">
+              <option value="all">전체 사유</option>
+              <option value="low_conf">신뢰도 저하</option>
+              <option value="user_flag">사용자 플래그</option>
+              <option value="missing">라벨 누락</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">원본 모델</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-52">
+              <option value="all">전체 모델</option>
+              <option value="B0">SegFormer-B0 (경량)</option>
+              <option value="B2">SegFormer-B2 (표준)</option>
+              <option value="B3">SegFormer-B3 (고정밀)</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">라벨링 상태</label>
+            <select
+              class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-32">
+              <option value="all">전체</option>
+              <option value="queued">대기</option>
+              <option value="in_progress">진행중</option>
+              <option value="completed">완료</option>
+              <option value="used">사용됨</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hidden lg:block">
+          <button class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="초기화">
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+
+      </div>
+
+      <!-- Data Grid -->
+      <div class="glass-panel flex-1 rounded-lg overflow-hidden flex flex-col fade-in-up"
+        style="animation-delay: 0.2s;">
+        <div class="flex-1 overflow-auto custom-scroll">
+          <table class="w-full border-collapse">
+            <thead class="sticky top-0 z-10 th-glass">
+              <tr>
+                <th class="py-3 pl-3 pr-1 md:py-4 md:pl-4 md:pr-2 w-10 border-b border-gray-800">
+                  <input type="checkbox" id="check-all"
+                    class="w-4 h-4 accent-[#C5A059] bg-transparent border-gray-700 rounded cursor-pointer">
+                </th>
+                <th
+                  class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  등록 일시</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  원본 모델</th>
+                <th
+                  class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  대상 파일</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  보정 사유</th>
+                <th
+                  class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  추론 신뢰도</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  라벨링 상태</th>
+                <th
+                  class="py-3 px-3 md:py-4 md:px-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 whitespace-nowrap">
+                  조치</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800/50" id="finetune-queue-body">
+              <!-- Data populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="border-t border-gray-800 p-4 flex items-center justify-between bg-[#0B0E12]/50">
+          <span class="text-xs text-gray-500">총 <strong id="total-count">0</strong>건 중 <strong>1-50</strong> 표시 · 완료 <strong id="completed-count" class="text-emerald-400">0</strong>건</span>
+          <div class="flex gap-2">
+            <button class="lg:hidden p-2 rounded hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+              title="초기화">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+            <div class="w-px h-4 bg-gray-700 my-auto mx-2"></div>
+            <button
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+                data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <button
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+                data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    lucide.createIcons();
+
+    // Mock Data Generation - 파인튜닝 대기열
+    const models = [
+      'SegFormer-B0-v.1.0', 'SegFormer-B0-v.1.1',
+      'SegFormer-B2-v.1.0', 'SegFormer-B2-v.2.0',
+      'SegFormer-B3-v.1.0'
+    ];
+    const fileTags = ['A01', 'A03', 'B01', 'B07', 'C04', 'C12', 'D02', 'E15', 'F08', 'G11'];
+    const reasons = [
+      { key: 'low_conf',  label: '신뢰도 저하',     cls: 'bg-yellow-900/20 text-yellow-400 border-yellow-900/40', icon: 'alert-triangle' },
+      { key: 'user_flag', label: '사용자 플래그',   cls: 'bg-orange-900/20 text-orange-400 border-orange-900/40', icon: 'flag' },
+      { key: 'missing',   label: '라벨 누락',       cls: 'bg-purple-900/20 text-purple-400 border-purple-900/40', icon: 'help-circle' }
+    ];
+    const labelStates = [
+      { key: 'queued',      label: '대기',     cls: 'bg-gray-800 text-gray-400 border-gray-700' },
+      { key: 'in_progress', label: '진행중',   cls: 'bg-blue-900/20 text-blue-400 border-blue-900/40' },
+      { key: 'completed',   label: '완료',     cls: 'bg-emerald-900/20 text-emerald-400 border-emerald-900/40' },
+      { key: 'used',        label: '사용됨',   cls: 'bg-gray-800 text-gray-500 border-gray-700' }
+    ];
+
+    function pickWeighted(items, weights) {
+      const total = weights.reduce((a, b) => a + b, 0);
+      let r = Math.random() * total;
+      for (let i = 0; i < items.length; i++) {
+        if ((r -= weights[i]) < 0) return items[i];
+      }
+      return items[items.length - 1];
+    }
+
+    function generateQueueData(count) {
+      const data = [];
+      const now = new Date();
+
+      for (let i = 0; i < count; i++) {
+        // 추론 결과가 큐에 적재된 시점: 평균 1시간 간격
+        const time = new Date(now - i * 60 * 60 * 1000);
+        const model = models[Math.floor(Math.random() * models.length)];
+        const tag = fileTags[Math.floor(Math.random() * fileTags.length)];
+        const dateStr = time.toISOString().slice(0, 10);
+        const filename = `ortho_${dateStr}_${tag}.tif`;
+
+        // 보정 사유 분포: 신뢰도 저하 60%, 사용자 플래그 25%, 라벨 누락 15%
+        const reason = pickWeighted(reasons, [60, 25, 15]);
+
+        // 추론 신뢰도: 사유에 따라 분포 다름
+        let confidence;
+        if (reason.key === 'low_conf') confidence = 0.55 + Math.random() * 0.20;       // 0.55 ~ 0.75
+        else if (reason.key === 'user_flag') confidence = 0.78 + Math.random() * 0.15; // 0.78 ~ 0.93
+        else confidence = 0.65 + Math.random() * 0.20;                                  // 0.65 ~ 0.85
+
+        // 라벨링 상태 분포: 대기 50%, 진행중 15%, 완료 25%, 사용됨 10%
+        const labelState = pickWeighted(labelStates, [50, 15, 25, 10]);
+
+        data.push({
+          id: i,
+          time: time.toISOString().replace('T', ' ').slice(0, 19),
+          model: model,
+          filename: filename,
+          reason: reason,
+          confidence: confidence,
+          labelState: labelState
+        });
+      }
+      return data;
+    }
+
+    // Render Table
+    const tableBody = document.getElementById('finetune-queue-body');
+    const queueData = generateQueueData(50);
+
+    document.getElementById('total-count').innerText = queueData.length.toLocaleString();
+    document.getElementById('completed-count').innerText =
+      queueData.filter(r => r.labelState.key === 'completed').length;
+
+    queueData.forEach(row => {
+      // 완료 상태만 체크박스 활성화 (파인튜닝 트리거 가능)
+      const isSelectable = row.labelState.key === 'completed';
+      const isUsed = row.labelState.key === 'used';
+
+      const checkbox = isSelectable
+        ? `<input type="checkbox" class="row-check w-4 h-4 accent-[#C5A059] bg-transparent border-gray-700 rounded cursor-pointer" data-id="${row.id}">`
+        : `<input type="checkbox" disabled class="w-4 h-4 opacity-30 cursor-not-allowed">`;
+
+      // 신뢰도 바
+      const pct = (row.confidence * 100).toFixed(1);
+      const pctInt = Math.round(row.confidence * 100);
+      let barColor, label, labelCls;
+      if (row.confidence >= 0.85) { barColor = 'bg-emerald-500'; label = 'High'; labelCls = 'text-emerald-500'; }
+      else if (row.confidence >= 0.75) { barColor = 'bg-emerald-500'; label = 'Avg'; labelCls = 'text-gray-500'; }
+      else { barColor = 'bg-yellow-500'; label = 'Low'; labelCls = 'text-yellow-500'; }
+
+      // 조치 버튼: 상태에 따라 다름
+      let actionBtn;
+      if (row.labelState.key === 'queued') {
+        actionBtn = `<button class="text-xs text-[#C5A059] hover:text-white border border-[#C5A059]/40 hover:border-[#C5A059] px-2 py-1 rounded transition-colors flex items-center gap-1">
+          <i data-lucide="edit-3" class="w-3 h-3"></i> 라벨링 시작
+        </button>`;
+      } else if (row.labelState.key === 'in_progress') {
+        actionBtn = `<button class="text-xs text-blue-400 hover:text-white border border-blue-500/40 hover:border-blue-500 px-2 py-1 rounded transition-colors flex items-center gap-1">
+          <i data-lucide="edit-3" class="w-3 h-3"></i> 이어서 라벨링
+        </button>`;
+      } else if (row.labelState.key === 'completed') {
+        actionBtn = `<button class="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-2 py-1 rounded transition-colors flex items-center gap-1">
+          <i data-lucide="eye" class="w-3 h-3"></i> 결과 확인
+        </button>`;
+      } else { // used
+        actionBtn = `<span class="text-xs text-gray-500 italic">파인튜닝 적용됨</span>`;
+      }
+
+      const rowOpacity = isUsed ? 'opacity-50' : '';
+
+      const tr = document.createElement('tr');
+      tr.className = `hover:bg-white/5 transition-colors group border-b border-gray-800/50 ${rowOpacity}`;
+      tr.innerHTML = `
+        <td class="py-3 pl-3 pr-1 md:py-4 md:pl-4 md:pr-2">${checkbox}</td>
+        <td class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-400 group-hover:text-white whitespace-nowrap">${row.time}</td>
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+            <span class="text-sm font-medium text-gray-200">${row.model}</span>
+          </div>
+        </td>
+        <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono text-gray-300 whitespace-nowrap">${row.filename}</td>
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${row.reason.cls}">
+            <i data-lucide="${row.reason.icon}" class="w-3 h-3"></i>
+            ${row.reason.label}
+          </span>
+        </td>
+        <td class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+          <div class="flex flex-col gap-1 w-24">
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>${pct}%</span>
+              <span class="${labelCls}">${label}</span>
+            </div>
+            <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+              <div class="h-full ${barColor}" style="width: ${pctInt}%"></div>
+            </div>
+          </div>
+        </td>
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${row.labelState.cls}">${row.labelState.label}</span>
+        </td>
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${actionBtn}</td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    lucide.createIcons(); // Re-run for dynamic content
+
+    // 체크박스 + 파인튜닝 시작 버튼 연동
+    const checkAll = document.getElementById('check-all');
+    const startBtn = document.getElementById('btn-start-finetune');
+    const selectedCountEl = document.getElementById('selected-count');
+
+    function updateSelectedCount() {
+      const selected = document.querySelectorAll('.row-check:checked').length;
+      selectedCountEl.innerText = selected;
+      startBtn.disabled = selected === 0;
+    }
+
+    checkAll.addEventListener('change', () => {
+      document.querySelectorAll('.row-check').forEach(cb => { cb.checked = checkAll.checked; });
+      updateSelectedCount();
+    });
+
+    document.querySelectorAll('.row-check').forEach(cb => {
+      cb.addEventListener('change', updateSelectedCount);
+    });
+
+    startBtn.addEventListener('click', () => {
+      const selected = document.querySelectorAll('.row-check:checked').length;
+      if (selected === 0) return;
+      alert(`선택된 ${selected}건의 보정 데이터로 파인튜닝 잡을 시작합니다.`);
+    });
+
+    // Sidebar Toggle Logic
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle('-translate-x-full');
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth < 1024) {
+        if (sidebar && !sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+          sidebar.classList.add('-translate-x-full');
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

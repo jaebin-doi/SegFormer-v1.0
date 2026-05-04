@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>모델 학습 관리</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/mis-style.css">
+  <style>
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .th-glass {
+      background: rgba(11, 14, 18, 0.95);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+
+<body
+  class="flex h-screen w-screen bg-gradient-to-br from-[#0B0E12] via-[#0F1318] to-[#151A20] text-[#E6E9EF] overflow-hidden select-none">
+
+  <div class="noise-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0B0E12] border-r border-[#2A313B] flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 lg:static lg:inset-auto lg:flex-shrink-0">
+    <div class="p-12 flex flex-col items-center">
+      <div
+        class="w-16 h-16 rounded-full border border-[#2A313B] flex items-center justify-center mb-4 cursor-pointer hover:border-[#C5A059] transition-colors group relative overflow-hidden">
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Profile"
+          class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">
+      </div>
+      <div class="text-center">
+        <h2 id="sidebar-name" class="text-[16px] font-bold text-[#E6E9EF] tracking-wide">김 관리자</h2>
+        <p id="sidebar-team" class="text-[12px] text-[#A9B0BC] mt-1 font-medium">생산 1팀</p>
+      </div>
+
+      <!-- Mobile Only Icons -->
+      <div class="flex lg:hidden items-center gap-4 mt-6">
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <button class="p-2 text-[#A9B0BC] hover:text-[#E6E9EF] transition-colors rounded-full hover:bg-[#1A1F26]">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-4 space-y-1">
+      <a href="index.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">홈</span>
+      </a>
+
+      <a href="m1_model_training.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 bg-[#1A1F26] text-[#E6E9EF] transition-all duration-200 group border-l-2 border-[#C5A059]">
+        <i data-lucide="brain-circuit" class="w-5 h-5 text-[#C5A059]"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 학습 관리</span>
+      </a>
+
+      <a href="m2_training_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="history" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">학습 이력 조회</span>
+      </a>
+
+      <a href="m3_inference_history.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="scan-search" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">추론 결과 이력</span>
+      </a>
+
+      <a href="m4_finetuning.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="repeat" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">파인튜닝 시스템</span>
+      </a>
+
+      <a href="m5_model_performance.html"
+        class="menu-item w-full flex items-center gap-4 px-4 py-3 text-[#A9B0BC] hover:text-[#E6E9EF] hover:bg-[#151A20] transition-all duration-200 group">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+        <span class="text-[14px] font-medium tracking-tight">모델 성능 분석</span>
+      </a>
+
+    </nav>
+
+    <div class="p-8">
+      <h2 class="text-2xl text-[#D4C09E] font-semibold text-gradient-gold tracking-tighter">DOI AI</h2>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col min-w-0 relative">
+
+    <!-- Top Bar -->
+    <header
+      class="fixed top-0 right-0 left-0 lg:left-[260px] h-[64px] border-b border-[#2A313B] flex items-center justify-between px-4 lg:px-8 bg-[#0B0E12]/80 backdrop-blur-md z-10 transition-all duration-300">
+      <div class="flex items-center gap-4">
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="lg:hidden text-[#A9B0BC] hover:text-[#E6E9EF]">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <h1 class="text-xl font-light tracking-tight text-white"><span class="font-medium text-[#C5A059]">모델 학습 관리</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded bg-blue-900/20 border border-blue-900/50">
+          <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+          <span class="text-xs text-blue-400 font-mono">AI 대기중</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Area: Split Screen -->
+    <main class="flex-1 p-6 pt-[86px] flex flex-col lg:flex-row gap-6 overflow-y-auto lg:overflow-hidden">
+
+      <!-- Left: Maintenance Log -->
+      <section class="flex flex-col gap-4 lg:flex-1 lg:min-h-0">
+        <h2 class="text-sm text-gray-400 font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="clipboard-pen" class="w-4 h-4"></i> 학습 데이터 기록
+        </h2>
+
+        <div class="glass-panel flex-1 rounded-xl p-3 flex flex-col gap-4 lg:overflow-hidden">
+          <!-- Log List (Moved Up) -->
+          <div class="flex flex-col gap-3 min-h-0 border-b border-gray-800 pb-4 lg:flex-1">
+
+            <!-- Table Header / Date Picker -->
+            <div
+              class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-0 pb-2 border-b border-gray-800/50">
+              <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i>
+                  <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">조회 기간</span>
+                </div>
+                <div
+                  class="flex items-center justify-center gap-2 bg-[#0B0E12] border border-gray-700 rounded px-2 py-1 hover:border-gray-500 transition-colors w-full lg:w-auto">
+                  <span class="text-xs text-gray-300 font-mono">2026-01-01</span>
+                  <span class="text-gray-600">~</span>
+                  <span class="text-xs text-gray-300 font-mono">2026-01-02</span>
+                </div>
+              </div>
+              <div class="flex gap-2 w-full lg:w-auto">
+                <select
+                  class="bg-[#0B0E12] border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 outline-none focus:border-[#C5A059] w-full lg:w-auto">
+                  <option selected>SegFormer-B2-v.1.0</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto custom-scroll lg:flex-1 lg:overflow-auto lg:min-h-[300px]">
+              <table class="w-full border-collapse">
+                <thead class="sticky top-0 z-10 th-glass">
+                  <tr>
+                    <th class="text-left text-xs text-gray-500 font-medium py-3 px-3 md:px-4 border-b border-gray-800 whitespace-nowrap">날짜</th>
+                    <th class="text-left text-xs text-gray-500 font-medium py-3 px-3 md:px-4 border-b border-gray-800 whitespace-nowrap">업로드한 파일명</th>
+                    <th class="text-left text-xs text-gray-500 font-medium py-3 px-3 md:px-4 border-b border-gray-800 whitespace-nowrap">학습 작업 내용</th>
+                  </tr>
+                </thead>
+                <tbody class="text-sm">
+                  <tr class="border-b border-gray-800/50 hover:bg-white/5 transition-colors group">
+                    <td class="py-3 px-3 md:px-4 text-gray-400 font-mono group-hover:text-gray-300 transition-colors whitespace-nowrap">2026-01-02 10:45</td>
+                    <td class="py-3 px-3 md:px-4 text-emerald-400 font-medium font-mono group-hover:text-emerald-300 transition-colors whitespace-nowrap">ortho_2026-01-02_A03.tif</td>
+                    <td class="py-3 px-3 md:px-4 text-gray-300 group-hover:text-white transition-colors whitespace-nowrap">충청남도 예산군 지역 추가</td>
+                  </tr>
+                  <tr class="border-b border-gray-800/50 hover:bg-white/5 transition-colors group">
+                    <td class="py-3 px-3 md:px-4 text-gray-400 font-mono group-hover:text-gray-300 transition-colors whitespace-nowrap">2026-01-01 09:12</td>
+                    <td class="py-3 px-3 md:px-4 text-emerald-400 font-medium font-mono group-hover:text-emerald-300 transition-colors whitespace-nowrap">ortho_2026-01-01_B07.tif</td>
+                    <td class="py-3 px-3 md:px-4 text-gray-300 group-hover:text-white transition-colors whitespace-nowrap">전라남도 나주시 지역 추가</td>
+                  </tr>
+                  <tr class="border-b border-gray-800/50 hover:bg-white/5 transition-colors group">
+                    <td class="py-3 px-3 md:px-4 text-gray-400 font-mono group-hover:text-gray-300 transition-colors whitespace-nowrap">2025-12-31 16:28</td>
+                    <td class="py-3 px-3 md:px-4 text-emerald-400 font-medium font-mono group-hover:text-emerald-300 transition-colors whitespace-nowrap">ortho_2025-12-31_C12.tif</td>
+                    <td class="py-3 px-3 md:px-4 text-gray-300 group-hover:text-white transition-colors whitespace-nowrap">경상북도 상주시 지역 파인튜닝</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-gray-500">총 <strong>3</strong>건</span>
+              <div class="flex gap-1">
+                <button
+                  class="w-6 h-6 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+                  <i data-lucide="chevron-left" class="w-3 h-3"></i>
+                </button>
+                <button
+                  class="w-6 h-6 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+                  <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Form (Moved Down) -->
+          <div class="flex flex-col gap-4">
+            <div class="grid grid-cols-3 gap-3">
+              <div class="col-span-2 flex flex-col gap-1">
+                <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">정사영상 파일</label>
+                <label
+                  class="bg-[#0B0E12] border border-dashed border-gray-700 rounded px-3 py-2 text-sm text-gray-500 hover:border-[#C5A059] hover:text-[#C5A059] transition-colors cursor-pointer flex items-center gap-2">
+                  <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                  <span>.tif / .tiff 파일 업로드</span>
+                  <input type="file" accept=".tif,.tiff" class="hidden">
+                </label>
+              </div>
+              <div class="col-span-1 flex flex-col gap-1">
+                <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">학습 모드</label>
+                <select
+                  class="bg-[#0B0E12] border border-gray-700 rounded px-2 py-2 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors">
+                  <option value="new">신규학습</option>
+                  <option value="finetune">파인튜닝</option>
+                  <option value="retrain">재학습</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">학습 작업 내용</label>
+              <textarea
+                class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors h-20 resize-none"
+                placeholder="예) 충청남도 예산군 지역 추가"></textarea>
+            </div>
+            <button
+              class="w-full bg-[#1A1F26] border border-[#C5A059]/30 text-[#C5A059] hover:bg-[#C5A059] hover:text-[#0B0E12] py-2 rounded font-medium transition-all duration-200">
+              학습 데이터 등록
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: AI Chatbot -->
+      <section class="flex flex-col gap-4 min-h-[500px] lg:flex-1 lg:min-h-0">
+        <h2 class="text-sm text-gray-400 font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="bot" class="w-4 h-4"></i> AI 학습 어시스턴트
+        </h2>
+
+        <div class="glass-panel flex-1 rounded-xl flex flex-col overflow-hidden relative">
+          <!-- Chat Area -->
+          <div class="flex-1 p-6 overflow-auto custom-scroll flex flex-col gap-4" id="chat-history">
+            <div class="flex gap-4">
+              <div
+                class="w-8 h-8 rounded-full bg-indigo-900/50 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
+                <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
+              </div>
+              <div class="bg-[#1A1F26] p-4 rounded-2xl rounded-tl-none border border-gray-800 max-w-[80%]">
+                <p class="text-sm text-gray-300 leading-relaxed">
+                  안녕하세요. 드론 정사영상 학습 어시스턴트입니다.<br>
+                  현재 <span class="text-[#C5A059] font-bold">SegFormer-B2-v.1.0</span> 모델의 <span class="text-[#C5A059] font-bold">시설</span> 클래스 mIoU가 0.72로 타 클래스 대비 낮습니다.<br>
+                  시설 객체 학습 데이터 보강을 권장합니다.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex gap-4 flex-row-reverse">
+              <div
+                class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0 border border-gray-700">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                  class="w-full h-full rounded-full opacity-70">
+              </div>
+              <div class="bg-[#C5A059]/10 p-4 rounded-2xl rounded-tr-none border border-[#C5A059]/20 max-w-[80%]">
+                <p class="text-sm text-[#E6E9EF]">
+                  알겠어. 최근 등록한 예산군 정사영상 라벨링 현황도 보여줘.
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div
+                class="w-8 h-8 rounded-full bg-indigo-900/50 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
+                <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
+              </div>
+              <div class="bg-[#1A1F26] p-4 rounded-2xl rounded-tl-none border border-gray-800 max-w-[80%]">
+                <p class="text-sm text-gray-300 leading-relaxed mb-2">
+                  최근 7일간 등록된 예산군 정사영상은 총 3건, 라벨링 진행률 평균 84%입니다.
+                </p>
+                <div class="bg-black/30 rounded p-2 text-xs font-mono text-gray-400 border border-gray-800">
+                  [2026-01-02] ortho_A03.tif → 라벨링 100% (논 / 밭 / 시설)<br>
+                  [2026-01-01] ortho_B07.tif → 라벨링 92% (논 / 과수원)<br>
+                  [2025-12-30] ortho_C01.tif → 라벨링 60% (밭 / 시설)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="p-4 border-t border-gray-800 bg-[#0B0E12]/50">
+            <div
+              class="flex items-center gap-2 bg-[#050505] border border-gray-800 rounded-lg px-4 py-2 focus-within:border-[#C5A059] transition-colors">
+              <label class="text-gray-500 hover:text-[#C5A059] transition-colors cursor-pointer flex-shrink-0" title="파일 첨부">
+                <i data-lucide="paperclip" class="w-5 h-5"></i>
+                <input type="file" class="hidden" multiple>
+              </label>
+              <input type="text" id="ai-chat-input"
+                class="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-gray-600 min-w-0"
+                placeholder="AI에게 질문하기">
+              <button class="text-[#C5A059] hover:text-white transition-colors">
+                <i data-lucide="send-horizontal" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    lucide.createIcons();
+
+    // AI Chatbot Logic
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // Sidebar Toggle Logic
+      const sidebar = document.getElementById('sidebar');
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          sidebar.classList.toggle('-translate-x-full');
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth < 1024) {
+          if (sidebar && !sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            sidebar.classList.add('-translate-x-full');
+          }
+        }
+      });
+
+      const chatInput = document.querySelector('input[placeholder^="AI에게 질문하기"]');
+      const sendButton = chatInput.nextElementSibling; // The button after the input
+      const chatHistory = document.querySelector('#chat-history');
+
+      function addMessage(text, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = isUser ? 'flex gap-4 flex-row-reverse animate-fade-in-up' : 'flex gap-4 animate-fade-in-up';
+
+        const avatarHtml = isUser
+          ? `<div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0 border border-gray-700">
+               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-full h-full rounded-full opacity-70">
+             </div>`
+          : `<div class="w-8 h-8 rounded-full bg-indigo-900/50 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
+               <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
+             </div>`;
+
+        const bubbleClass = isUser
+          ? 'bg-[#C5A059]/10 p-4 rounded-2xl rounded-tr-none border border-[#C5A059]/20 max-w-[80%]'
+          : 'bg-[#1A1F26] p-4 rounded-2xl rounded-tl-none border border-gray-800 max-w-[80%]';
+
+        const textClass = isUser ? 'text-sm text-[#E6E9EF]' : 'text-sm text-gray-300 leading-relaxed';
+
+        messageDiv.innerHTML = `
+          ${avatarHtml}
+          <div class="${bubbleClass}">
+            <p class="${textClass}">${text}</p>
+          </div>
+        `;
+
+        chatHistory.appendChild(messageDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        lucide.createIcons();
+      }
+
+      function handleSend() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        addMessage(text, true);
+        chatInput.value = '';
+
+        // Simulate AI thinking and response
+        setTimeout(() => {
+          const responses = [
+            "데이터를 분석 중입니다... 잠시만 기다려주세요.",
+            "해당 기간의 평균 설비 가동률은 98.5%입니다.",
+            "R-02 로봇의 토크 부하가 상승하는 추세입니다. 베어링 마모가 의심됩니다.",
+            "최근 1시간 내 발생한 알람은 없습니다. 설비 상태 양호합니다.",
+            "목표 생산량 대비 현재 105% 달성 중입니다. 생산 효율이 우수합니다.",
+            "지난주 대비 에너지 소비량이 3% 감소했습니다."
+          ];
+          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+          addMessage(randomResponse, false);
+        }, 1000);
+      }
+
+      if (sendButton) {
+        sendButton.addEventListener('click', handleSend);
+      }
+
+      if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') handleSend();
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

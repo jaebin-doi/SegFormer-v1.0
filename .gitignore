@@ -1,0 +1,59 @@
+# ── 대용량 데이터 / 산출물 (커밋 금지) ──
+download/
+data/
+work_dirs/
+metrics/
+mlruns/
+.dvc/cache/
+.dvc/tmp/
+
+# 정사영상 / 라벨 SHP
+img/
+*.tif
+*.tiff
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cpg
+*.qix
+*.gpkg
+*.zip
+
+# 모델 체크포인트
+*.pth
+*.pt
+*.onnx
+*.ckpt
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Virtual envs ──
+.venv/
+venv/
+env/
+ENV/
+
+# ── IDE / OS ──
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 비밀 / 환경변수 ──
+.env
+.env.local
+*.key
+*.pem
+secrets.json
