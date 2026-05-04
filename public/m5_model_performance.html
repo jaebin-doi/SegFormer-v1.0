@@ -179,9 +179,9 @@
 
           <div class="flex flex-col gap-1 w-full lg:w-auto">
             <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">모델 백본</label>
-            <select
+            <select id="filter-backbone"
               class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-44">
-              <option value="all">전체 백본</option>
+              <option value="">전체 백본</option>
               <option value="B0">SegFormer-B0 (경량)</option>
               <option value="B2">SegFormer-B2 (표준)</option>
               <option value="B3">SegFormer-B3 (고정밀)</option>
@@ -190,9 +190,9 @@
 
           <div class="flex flex-col gap-1 w-full lg:w-auto">
             <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">운영 상태</label>
-            <select
+            <select id="filter-state"
               class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-36">
-              <option value="all">전체</option>
+              <option value="">전체</option>
               <option value="production">운영중</option>
               <option value="staging">검증중</option>
               <option value="archived">보관</option>
@@ -201,7 +201,7 @@
 
           <div class="flex flex-col gap-1 w-full lg:w-auto">
             <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">정렬</label>
-            <select
+            <select id="filter-sort"
               class="bg-[#0B0E12] border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-[#C5A059] transition-colors w-full lg:w-36">
               <option value="latest">최신순</option>
               <option value="miou">mIoU 높은순</option>
@@ -211,7 +211,7 @@
         </div>
 
         <div class="hidden lg:block">
-          <button class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="새로고침">
+          <button id="btn-refresh" class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="새로고침">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
           </button>
         </div>
@@ -374,18 +374,18 @@
 
         <!-- Pagination -->
         <div class="border-t border-gray-800 p-4 flex items-center justify-between bg-[#0B0E12]/50">
-          <span class="text-xs text-gray-500">총 <strong id="total-count">23</strong>개 모델 중 <strong>1-23</strong> 표시 · 운영중 <strong id="prod-count" class="text-emerald-400">2</strong>개</span>
+          <span class="text-xs text-gray-500">총 <strong id="total-count">0</strong>개 모델 중 <strong id="range-display">0-0</strong> 표시 · 운영중 <strong id="prod-count" class="text-emerald-400">0</strong>개</span>
           <div class="flex gap-2">
-            <button class="lg:hidden p-2 rounded hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+            <button id="btn-refresh-mobile" class="lg:hidden p-2 rounded hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
               title="새로고침">
               <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
             </button>
             <div class="w-px h-4 bg-gray-700 my-auto mx-2"></div>
-            <button
-              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+            <button id="btn-prev"
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><i
                 data-lucide="chevron-left" class="w-4 h-4"></i></button>
-            <button
-              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"><i
+            <button id="btn-next"
+              class="w-8 h-8 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><i
                 data-lucide="chevron-right" class="w-4 h-4"></i></button>
           </div>
         </div>
@@ -398,145 +398,136 @@
   <script>
     lucide.createIcons();
 
-    // Mock Data Generation - 모델 성능 분석
-    // 백본별 특성: B0 = 경량/빠름/낮은 정확도, B2 = 표준, B3 = 고정밀/느림/높은 정확도
-    const backbones = [
-      { name: 'B0', baseMiou: 0.74, dataScale: 0.9 },
-      { name: 'B2', baseMiou: 0.81, dataScale: 1.0 },
-      { name: 'B3', baseMiou: 0.85, dataScale: 1.0 }
-    ];
-    const stateConfigs = [
-      { key: 'production', label: 'PRODUCTION', cls: 'bg-emerald-900/20 text-emerald-500 border-emerald-900/50', dot: 'bg-emerald-500', rowBg: 'bg-emerald-900/5', weight: 15 },
-      { key: 'staging',    label: 'STAGING',    cls: 'bg-blue-900/20 text-blue-400 border-blue-900/50',          dot: 'bg-blue-500',    rowBg: '',                  weight: 25 },
-      { key: 'archived',   label: 'ARCHIVED',   cls: 'bg-gray-800 text-gray-500 border-gray-700',                dot: 'bg-gray-600',    rowBg: '',                  weight: 60 }
-    ];
+    // 운영 상태 표시 설정 (배지 클래스 / dot 색상 / 행 배경)
+    const STATE_CONFIG = {
+      production: { label: 'PRODUCTION', cls: 'bg-emerald-900/20 text-emerald-500 border-emerald-900/50', dot: 'bg-emerald-500', rowBg: 'bg-emerald-900/5' },
+      staging:    { label: 'STAGING',    cls: 'bg-blue-900/20 text-blue-400 border-blue-900/50',          dot: 'bg-blue-500',    rowBg: '' },
+      archived:   { label: 'ARCHIVED',   cls: 'bg-gray-800 text-gray-500 border-gray-700',                dot: 'bg-gray-600',    rowBg: '' },
+    };
 
-    function pickWeighted(items, getWeight) {
-      const total = items.reduce((s, it) => s + getWeight(it), 0);
-      let r = Math.random() * total;
-      for (const it of items) {
-        if ((r -= getWeight(it)) < 0) return it;
-      }
-      return items[items.length - 1];
+    const state = { page: 1, limit: 25, total: 0 };
+
+    function buildQuery() {
+      const params = new URLSearchParams();
+      const backbone = document.getElementById('filter-backbone').value;
+      const deployState = document.getElementById('filter-state').value;
+      const sort = document.getElementById('filter-sort').value;
+      if (backbone) params.set('backbone', backbone);
+      if (deployState) params.set('state', deployState);
+      params.set('sort', sort || 'latest');
+      params.set('page', state.page);
+      params.set('limit', state.limit);
+      return params.toString();
     }
 
-    function generateModelData(count) {
-      const data = [];
-      const now = new Date();
+    function renderRow(row) {
+      const cfg = STATE_CONFIG[row.deployment_state] || STATE_CONFIG.archived;
+      const isArchived = row.deployment_state === 'archived';
+      let rowClass = 'hover:bg-white/5 transition-colors group cursor-pointer';
+      if (cfg.rowBg) rowClass += ' ' + cfg.rowBg;
+      if (isArchived) rowClass += ' opacity-60';
 
-      // 버전 카운터: 백본별로 v.1.0, v.1.1 ... 식으로 증가
-      const versionCounters = { B0: 0, B2: 0, B3: 0 };
+      const miou = row.miou_overall;
+      const miouPct = Math.round(miou * 100);
+      let barColor, label, labelCls;
+      if (miou >= 0.83) { barColor = 'bg-emerald-500'; label = 'High'; labelCls = 'text-emerald-500'; }
+      else if (miou >= 0.75) { barColor = 'bg-emerald-500'; label = 'Avg'; labelCls = 'text-gray-500'; }
+      else { barColor = 'bg-yellow-500'; label = 'Low'; labelCls = 'text-yellow-500'; }
 
-      for (let i = 0; i < count; i++) {
-        // 학습은 평균 5일에 1번 완료된다고 가정
-        const date = new Date(now - i * 5 * 24 * 3600 * 1000);
-        const dateStr = date.toISOString().slice(0, 10);
+      const dateStr = row.training_completed_at.slice(0, 10);
+      const billions = (row.training_pixels / 1e9).toFixed(1);
 
-        const backbone = backbones[Math.floor(Math.random() * backbones.length)];
-        versionCounters[backbone.name]++;
-        const major = Math.floor(versionCounters[backbone.name] / 5) + 1;
-        const minor = versionCounters[backbone.name] % 5;
-        const version = `SegFormer-${backbone.name}-v.${major}.${minor}`;
+      const versionTextCls = isArchived ? 'text-gray-400' : 'text-gray-200';
+      const dateTextCls = isArchived ? 'text-gray-500' : 'text-gray-400';
+      const dataTextCls = isArchived ? 'text-gray-500' : 'text-gray-300';
+      const iouTextCls = isArchived ? 'text-gray-500' : 'text-gray-300';
+      const miouTextCls = isArchived ? 'text-gray-400' : 'text-gray-300';
 
-        // 학습 데이터량: 시간이 지날수록 증가 (최신이 더 많음)
-        const sheets = Math.round((2000 + (count - i) * 80 + Math.random() * 500) * backbone.dataScale);
-        const pixels = ((sheets * 0.27) / 1000).toFixed(1); // GB px 환산용 근사
+      const badgeCls = isArchived ? 'px-2 py-0.5 font-medium' : 'px-2.5 py-0.5 font-bold';
+      const stateBadge = `<span class="inline-flex items-center rounded text-xs border ${badgeCls} ${cfg.cls}">${cfg.label}</span>`;
 
-        // mIoU: 백본 기준 + 데이터량 기여 + 노이즈
-        const dataBonus = Math.min((sheets - 2000) / 8000 * 0.08, 0.08);
-        const noise = (Math.random() - 0.5) * 0.04;
-        const miou = Math.max(0.62, Math.min(0.92, backbone.baseMiou + dataBonus + noise));
+      const tr = document.createElement('tr');
+      tr.className = rowClass;
+      tr.innerHTML = `
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full ${cfg.dot}"></div>
+            <span class="text-sm font-medium ${versionTextCls}">${row.version}</span>
+          </div>
+        </td>
+        <td class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono ${dateTextCls} group-hover:text-white whitespace-nowrap">${dateStr}</td>
+        <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm ${dataTextCls} whitespace-nowrap">${row.training_sheets.toLocaleString()}장 <span class="text-gray-500">/ ${billions}B px</span></td>
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
+          <div class="flex flex-col gap-1 w-28">
+            <div class="flex justify-between text-xs">
+              <span class="${miouTextCls} font-mono">${miou.toFixed(3)}</span>
+              <span class="${labelCls}">${label}</span>
+            </div>
+            <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+              <div class="h-full ${barColor}" style="width: ${miouPct}%"></div>
+            </div>
+          </div>
+        </td>
+        <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono ${iouTextCls} whitespace-nowrap">${row.miou_rice_paddy.toFixed(2)} / ${row.miou_dry_field.toFixed(2)} / ${row.miou_orchard.toFixed(2)} / ${row.miou_greenhouse.toFixed(2)}</td>
+        <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${stateBadge}</td>
+      `;
+      return tr;
+    }
 
-        // 클래스별 IoU: 시설이 가장 어렵다는 가정 (-0.10), 논이 쉬움 (+0.04)
-        const iouRice    = Math.min(0.95, miou + 0.04 + (Math.random() - 0.5) * 0.02);
-        const iouField   = Math.min(0.95, miou + 0.02 + (Math.random() - 0.5) * 0.02);
-        const iouOrchard = Math.max(0.55, miou - 0.04 + (Math.random() - 0.5) * 0.03);
-        const iouFacility = Math.max(0.50, miou - 0.10 + (Math.random() - 0.5) * 0.04);
+    async function loadModels() {
+      const tableBody = document.getElementById('performance-table-body');
+      tableBody.innerHTML = '<tr><td colspan="6" class="py-12 text-center text-gray-500 text-sm">불러오는 중...</td></tr>';
 
-        const state = pickWeighted(stateConfigs, s => s.weight);
+      try {
+        const res = await fetch(`/api/models/performance?${buildQuery()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
 
-        data.push({
-          version: version,
-          backbone: backbone.name,
-          date: dateStr,
-          sheets: sheets,
-          pixels: pixels,
-          miou: miou,
-          iouRice: iouRice,
-          iouField: iouField,
-          iouOrchard: iouOrchard,
-          iouFacility: iouFacility,
-          state: state
+        state.total = data.total;
+        state.page = data.page;
+        state.limit = data.limit;
+
+        tableBody.innerHTML = '';
+        if (data.items.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" class="py-12 text-center text-gray-500 text-sm">조건에 맞는 모델이 없습니다.</td></tr>';
+        } else {
+          data.items.forEach(row => tableBody.appendChild(renderRow(row)));
+        }
+
+        const start = (data.page - 1) * data.limit + 1;
+        const end = Math.min(data.page * data.limit, data.total);
+        document.getElementById('total-count').innerText = data.total;
+        document.getElementById('range-display').innerText = data.total === 0 ? '0-0' : `${start}-${end}`;
+        document.getElementById('prod-count').innerText =
+          data.items.filter(m => m.deployment_state === 'production').length;
+
+        document.getElementById('btn-prev').disabled = data.page <= 1;
+        document.getElementById('btn-next').disabled = data.page * data.limit >= data.total;
+
+        lucide.createIcons();
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-red-400 text-sm">불러오기 실패: ${err.message}</td></tr>`;
+      }
+    }
+
+    // 초기 로드 + 이벤트 바인딩
+    document.addEventListener('DOMContentLoaded', () => {
+      ['filter-backbone', 'filter-state', 'filter-sort'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+          state.page = 1;
+          loadModels();
         });
-      }
-
-      // 최신순 정렬 (date 내림차순)
-      data.sort((a, b) => b.date.localeCompare(a.date));
-      return data;
-    }
-
-    // Render Table
-    const tableBody = document.getElementById('performance-table-body');
-    if (tableBody) {
-      tableBody.innerHTML = ''; // Clear static rows
-      const modelData = generateModelData(23);
-
-      document.getElementById('total-count').innerText = modelData.length;
-      document.getElementById('prod-count').innerText =
-        modelData.filter(m => m.state.key === 'production').length;
-
-      modelData.forEach(row => {
-        const isArchived = row.state.key === 'archived';
-        let rowClass = 'hover:bg-white/5 transition-colors group cursor-pointer';
-        if (row.state.rowBg) rowClass += ' ' + row.state.rowBg;
-        if (isArchived) rowClass += ' opacity-60';
-
-        // mIoU 바
-        const miouPct = Math.round(row.miou * 100);
-        let barColor, label, labelCls;
-        if (row.miou >= 0.83) { barColor = 'bg-emerald-500'; label = 'High'; labelCls = 'text-emerald-500'; }
-        else if (row.miou >= 0.75) { barColor = 'bg-emerald-500'; label = 'Avg'; labelCls = 'text-gray-500'; }
-        else { barColor = 'bg-yellow-500'; label = 'Low'; labelCls = 'text-yellow-500'; }
-
-        const versionTextCls = isArchived ? 'text-gray-400' : 'text-gray-200';
-        const dateTextCls = isArchived ? 'text-gray-500' : 'text-gray-400';
-        const dataTextCls = isArchived ? 'text-gray-500' : 'text-gray-300';
-        const iouTextCls = isArchived ? 'text-gray-500' : 'text-gray-300';
-        const miouTextCls = isArchived ? 'text-gray-400' : 'text-gray-300';
-
-        const stateBadge = isArchived
-          ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${row.state.cls}">${row.state.label}</span>`
-          : `<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${row.state.cls}">${row.state.label}</span>`;
-
-        const tr = document.createElement('tr');
-        tr.className = rowClass;
-        tr.innerHTML = `
-          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full ${row.state.dot}"></div>
-              <span class="text-sm font-medium ${versionTextCls}">${row.version}</span>
-            </div>
-          </td>
-          <td class="hidden md:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono ${dateTextCls} group-hover:text-white whitespace-nowrap">${row.date}</td>
-          <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm ${dataTextCls} whitespace-nowrap">${row.sheets.toLocaleString()}장 <span class="text-gray-500">/ ${row.pixels}B px</span></td>
-          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">
-            <div class="flex flex-col gap-1 w-28">
-              <div class="flex justify-between text-xs">
-                <span class="${miouTextCls} font-mono">${row.miou.toFixed(3)}</span>
-                <span class="${labelCls}">${label}</span>
-              </div>
-              <div class="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                <div class="h-full ${barColor}" style="width: ${miouPct}%"></div>
-              </div>
-            </div>
-          </td>
-          <td class="hidden lg:table-cell py-3 px-3 md:py-4 md:px-4 text-sm font-mono ${iouTextCls} whitespace-nowrap">${row.iouRice.toFixed(2)} / ${row.iouField.toFixed(2)} / ${row.iouOrchard.toFixed(2)} / ${row.iouFacility.toFixed(2)}</td>
-          <td class="py-3 px-3 md:py-4 md:px-4 whitespace-nowrap">${stateBadge}</td>
-        `;
-        tableBody.appendChild(tr);
       });
-      lucide.createIcons();
-    }
+      document.getElementById('btn-refresh').addEventListener('click', loadModels);
+      document.getElementById('btn-refresh-mobile').addEventListener('click', loadModels);
+      document.getElementById('btn-prev').addEventListener('click', () => {
+        if (state.page > 1) { state.page--; loadModels(); }
+      });
+      document.getElementById('btn-next').addEventListener('click', () => {
+        if (state.page * state.limit < state.total) { state.page++; loadModels(); }
+      });
+      loadModels();
+    });
 
     // Sidebar Toggle Logic
     const sidebar = document.getElementById('sidebar');

@@ -44,6 +44,12 @@ python-multipart>=0.0.9
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
+# ── DB (PostgreSQL 16, async) ──
+sqlalchemy>=2.0.30
+psycopg[binary]>=3.2.0
+asyncpg>=0.29.0
+alembic>=1.13.0
+
 # ── 인증 (JWT + bcrypt) ──
 PyJWT>=2.8.0
 bcrypt>=4.1.0
